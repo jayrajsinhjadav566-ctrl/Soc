@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOC L1 SIEM Lab</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div><span class="logo">S</span><div><h1>SOC L1 SIEM Lab</h1><p>Security monitoring · Training environment</p></div></div>
+  <span class="live"><i></i> LOCAL LAB</span>
+</header>
+<main>
+  <section class="intro">
+    <div><p class="eyebrow">SECURITY OPERATIONS CENTER</p><h2>Monitoring Overview</h2><p class="muted">Review events, investigate alerts, and document analyst actions.</p></div>
+    <div class="actions">
+      <form method="post" action="{{ url_for('import_samples') }}"><button class="primary">Import sample logs</button></form>
+      <form method="post" action="{{ url_for('collect_windows') }}"><button class="secondary">Collect Windows logs</button></form>
+    </div>
+  </section>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+  {% endwith %}
+  <section class="stats">
+    <article class="stat"><span>Total events</span><strong>{{ counts.events }}</strong><small>Saved to SQLite</small></article>
+    <article class="stat"><span>Total alerts</span><strong>{{ counts.alerts }}</strong><small>Detection rule matches</small></article>
+    <article class="stat"><span>Open alerts</span><strong>{{ counts.open }}</strong><small>Require analyst review</small></article>
+    <article class="stat"><span>High severity open</span><strong class="danger-text">{{ counts.high }}</strong><small>Prioritize investigation</small></article>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h3>Security alerts</h3><p class="muted">Latest 100 alerts</p></div>
+      <form class="filters" method="get">
+        <select name="severity"><option value="all" {% if severity=='all' %}selected{% endif %}>All severity</option><option value="HIGH" {% if severity=='HIGH' %}selected{% endif %}>High</option><option value="MEDIUM" {% if severity=='MEDIUM' %}selected{% endif %}>Medium</option><option value="LOW" {% if severity=='LOW' %}selected{% endif %}>Low</option></select>
+        <select name="status"><option value="all" {% if status=='all' %}selected{% endif %}>All status</option><option {% if status=='Open' %}selected{% endif %}>Open</option><option {% if status=='Investigating' %}selected{% endif %}>Investigating</option><option {% if status=='Closed' %}selected{% endif %}>Closed</option></select>
+        <button class="secondary">Filter</button>
+      </form>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Alert</th><th>Severity</th><th>Detected event</th><th>Source IP</th><th>Status</th><th>Update status</th></tr></thead><tbody>
+    {% for alert in alerts %}
+      <tr><td><b>{{ alert.rule_name }}</b><small>{{ alert.description }}</small><small>Created {{ alert.created_at }}</small></td><td><span class="pill {{ alert.severity|lower }}">{{ alert.severity }}</span></td><td>{{ alert.event_id }}<small>{{ alert.timestamp }}</small></td><td>{{ alert.source_ip or '—' }}</td><td><span class="status">{{ alert.status }}</span></td><td><form class="status-form" method="post" action="{{ url_for('update_status', alert_id=alert.id) }}"><select name="status"><option {% if alert.status=='Open' %}selected{% endif %}>Open</option><option {% if alert.status=='Investigating' %}selected{% endif %}>Investigating</option><option {% if alert.status=='Closed' %}selected{% endif %}>Closed</option></select><button class="tiny">Save</button></form></td></tr>
+    {% else %}<tr><td colspan="6" class="empty">No alerts yet. Click “Import sample logs” to populate the training dashboard.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h3>Recent security events</h3><p class="muted">Latest 20 stored events</p></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Timestamp</th><th>Event ID</th><th>User</th><th>Source IP</th><th>Source</th><th>Message</th></tr></thead><tbody>
+    {% for event in events %}<tr><td>{{ event.timestamp }}</td><td><code>{{ event.event_id }}</code></td><td>{{ event.username or '—' }}</td><td>{{ event.source_ip or '—' }}</td><td>{{ event.source }}</td><td>{{ event.message }}</td></tr>
+    {% else %}<tr><td colspan="6" class="empty">No events recorded.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+  <p class="footnote">Training use only. Sample data is simulated. Windows Security log access depends on permissions, audit policy, and available event fields. This app listens on localhost only.</p>
+</main>
+</body>
+</html>
