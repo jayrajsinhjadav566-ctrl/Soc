@@ -62,3 +62,4 @@ Stop the server with `Ctrl+C`. To reset stored data, delete `soc_lab.db` from th
 - This is a portfolio/learning project, not a replacement for an enterprise SIEM.
 - Do not expose the Flask development server to the public internet.
 - Windows log collection is optional; the sample dataset works without administrator rights.
+# Soc-L1-
